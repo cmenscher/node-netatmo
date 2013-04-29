@@ -1,0 +1,21 @@
+{
+  "name": "node-netatmo",
+  "version": "0.0.1",
+  "description": "This is an NPM module to interface with the Netatmo Personal Weather Station API.",
+  "main": "netatmo.js",
+  "scripts": {
+    "test": "test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/cmenscher/node-netatmo.git"
+  },
+  "bugs": {
+    "url": "https://github.com/cmenscher/node-netatmo/issues"
+  },
+  "keywords": [
+    "netatmo"
+  ],
+  "author": "Corey Menscher",
+  "license": "BSD"
+}
