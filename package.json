@@ -6,6 +6,11 @@
   "scripts": {
     "test": "test.js"
   },
+  "dependencies": {
+    "querystring": "0.2.0",
+    "events": "0.5.0",
+    "util", "0.4.9"
+  },
   "repository": {
     "type": "git",
     "url": "git://github.com/cmenscher/node-netatmo.git"
