@@ -193,7 +193,9 @@ Netatmo.prototype.invoke = function(path, callback) {
   var _this = this;
 
   if (!callback) {
-    callback = function(err, msg) { if (err) _this.logger.error('netatmo error', { err }); else _this.logger.info(msg); };
+    callback = function(err, msg) {
+      if (err) _this.logger.error('netatmo error', { exception: err }); else _this.logger.info(msg);
+    }
   }
 
   _this.config.api_options.path = path;
