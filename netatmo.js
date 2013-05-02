@@ -110,10 +110,10 @@ Netatmo.prototype.initialize = function(info) {
 Netatmo.prototype.getToken = function(callback) {
     var _this = this;
 
-    _this.logger.info("Getting authorization token...");
+    _this.logger.debug("Getting authorization token...");
 
     if(arguments.length === 0) {
-        callback = function(err) { _this.logger.error(err); };
+        callback = function(err) { _this.logger.error('getToken error', { excepton: err }); };
     }
 
     var auth_data = querystring.stringify(_this.config.auth_request);
@@ -132,7 +132,7 @@ Netatmo.prototype.getToken = function(callback) {
         _this.config.credentials.refresh_token = cred_obj.refresh_token;
         _this.config.nextTokenRefresh = _this.tokenUpdated + _this.config.credentials.expires_in;
 
-        _this.logger.info("Successfully retrieved token...");
+        _this.logger.debug("Successfully retrieved token...");
 
         _this.refreshTokenTimer = setInterval(function () { _this.refreshTokenCheck(_this); }, _this.config.tokenCheckInterval);
         callback(null);
@@ -145,7 +145,7 @@ Netatmo.prototype.getToken = function(callback) {
 };
 
 Netatmo.prototype.refreshTokenCheck = function(_this) {
-    _this.logger.info("Checking to see if the access token needs to be refreshed...");
+    _this.logger.debug("Checking to see if the access token needs to be refreshed...");
 
     var now = new Date();
 
@@ -156,7 +156,7 @@ Netatmo.prototype.refreshTokenCheck = function(_this) {
     _this.tokenUpdated = now; // update tokenUpdated to now so we can check all over again
     _this.refreshToken();
 
-    _this.logger.info("Refreshing authorization token...");
+    _this.logger.debug("Refreshing authorization token...");
 
     // Set the refresh token based on current credentials
     _this.config.auth_refresh.refresh_token = _this.config.credentials.refresh_token;
@@ -177,7 +177,7 @@ Netatmo.prototype.refreshTokenCheck = function(_this) {
 
             _this.config.nextTokenRefresh = _this.tokenUpdated + _this.config.credentials.expires_in;
 
-            _this.logger.info("Successfully refreshed access token...");
+            _this.logger.debug("Successfully refreshed access token...");
         });
     });
 
@@ -192,7 +192,9 @@ Netatmo.prototype.refreshTokenCheck = function(_this) {
 Netatmo.prototype.invoke = function(path, callback) {
   var _this = this;
 
-  if (!callback) callback = function(err, msg) { if (err) _this.logger.error(err); else _this.logger.info(msg); };
+  if (!callback) {
+    callback = function(err, msg) { if (err) _this.logger.error('netatmo error', { err }); else _this.logger.info(msg); };
+  }
 
   _this.config.api_options.path = path;
 
