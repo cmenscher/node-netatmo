@@ -75,6 +75,7 @@ var DEFAULT_LOGGER = { error   : function(msg, props) { console.log(msg); consol
 
 var Netatmo = function(info) {
     this.devices = null;
+    this.currentValue = 0; // holds the last value of whatever we decide to examine (i.e. Temp, Pressure, Humidity, Sound...)
     this.lastValue = 0; // holds the last value of whatever we decide to examine (i.e. Temp, Pressure, Humidity, Sound...)
     this.config = DEFAULT_CONFIG;
     this.logger = DEFAULT_LOGGER;

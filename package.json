@@ -1,7 +1,7 @@
 {
   "name": "node-netatmo",
-  "version": "0.0.1",
-  "description": "This is an NPM module to interface with the Netatmo Personal Weather Station API.",
+  "version": "0.0.4",
+  "description": "This is an NPM module to interface with the Netatmo Personal Weather Station API. (http://dev.netatmo.com)",
   "main": "netatmo.js",
   "scripts": {
     "test": "test.js"
@@ -9,7 +9,7 @@
   "dependencies": {
     "querystring": "0.2.0",
     "events": "0.5.0",
-    "util", "0.4.9"
+    "util": "0.4.9"
   },
   "repository": {
     "type": "git",
@@ -21,6 +21,14 @@
   "keywords": [
     "netatmo"
   ],
-  "author": "Corey Menscher",
-  "license": "BSD"
+  "author": {
+    "name": "Corey Menscher"
+  },
+  "license": "BSD",
+  "readme": "node-netatmo\n============\n\nThis is an NPM module to interface with the Netatmo Personal Weather Station API. (http://dev.netatmo.com)\n\nThis module would not be possible without the work of Github user [mrose17](https://github.com/mrose17/).\n\nInstall\n-------\n\n    npm install node-netatmo\n\nAPI\n---\n\nPlease consult the [netatmo](http://netatmo.com) private api [documentation](http://dev.netatmo.com/doc/).\n\n### Load module\n\n    var Netatmo = require('node-netatmo')\n      , netatmo = new Netatmo.Netatmo()\n      ;\n    \n### Login to cloud\n\n    netatmo.on('error', function(err) {\n      ...\n    }).setConfig( '$CLIENT_ID' , '$CLIENT_SECRET' , '$USERNAME' , '$PASSWORD').getToken(function(err) {\n      if (err) return console.log('getToken: ' + err.message);\n\n      // good to go!\n    })\n\n### Get user information\n\n    netatmo.getUser(function(err, results) {\n      if (err) return console.log('getUser: ' + err.message);\n      if (results.status !== 'ok')  { console.log('getUser not ok'); return console.log(results); }\n\n      // inspect results.body\n    }\n\n### Get device information\n\n    netatmo.getDevices(function(err, results) {\n      if (err) return console.log('getDevices: ' + err.message);\n      if (results.status !== 'ok')  { console.log('getDevices not ok'); return console.log(results); }\n\n      // inspect results.body\n    }\n\n#### Get sensor measurements\n\nIt would be best if you read the [documentation](http://dev.netatmo.com/doc/) to understand the supported values for params:\n\n    var params = { device_id : '....'  // if not present, uses the first device_id from the previous call to getDevices\n                 , module_id : null    // optional\n                 , scale     : '1day'  // or: max, 30min, 3hours, 1week, 1month\n\n                                       // at least one of these must be present\n                 , type      : [ 'Temperature', 'CO2', 'Humidity', 'Pressure', 'Noise' ]\n\n                                       // these are all optional\n                 , date_begin : utc-timestamp\n                 , date_end   : utc-timestamp\n                 , limit      : 1024\n                 , optimize   : false\n                 };\n\n    netatmo.getMeasurement(params, function(err, results) {\n      if (err) return console.log('getMeasurement: ' + err.message);\n      if (results.status !== 'ok')  { console.log('getMeasurement not ok'); return console.log(results); }\n\n      // inspect results.body\n    }\n\nFinally\n-------\n\nEnjoy!\n",
+  "_id": "node-netatmo@0.0.3",
+  "dist": {
+    "shasum": "01a1e91225df91a909a83900a4e37066eb8fda05"
+  },
+  "_from": "node-netatmo@0.0.3"
 }
