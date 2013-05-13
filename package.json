@@ -1,6 +1,6 @@
 {
   "name": "node-netatmo",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "This is an NPM module to interface with the Netatmo Personal Weather Station API. (http://dev.netatmo.com)",
   "main": "netatmo.js",
   "scripts": {
