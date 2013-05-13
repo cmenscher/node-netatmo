@@ -63,7 +63,6 @@ var DEFAULT_CONFIG = {
         headers: {"Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"}
     },
 
-    nextTokenRefresh: 0,
     tokenCheckInterval: 60 * 1000
 };
 
@@ -71,6 +70,7 @@ var DEFAULT_LOGGER = { error   : function(msg, props) { console.log(msg); consol
                      , warning : function(msg, props) { console.log(msg); if (props) console.log(props);  }
                      , notice  : function(msg, props) { console.log(msg); if (props) console.log(props);  }
                      , info    : function(msg, props) { console.log(msg); if (props) console.log(props);  }
+                     , debug   : function(msg, props) { console.log(msg); if (props) console.log(props);  }
                      };
 
 var Netatmo = function(info) {
@@ -122,20 +122,33 @@ Netatmo.prototype.getToken = function(callback) {
     //SET THE HEADERS!!!
     _this.config.auth_options.headers = {"Content-Type": "application/x-www-form-urlencoded;charset=UTF-8", "Content-Length": auth_data.length};
 
-    _this.tokenUpdated = new Date().getTime() / 1000;
+    _this.tokenUpdated = new Date().getTime();
     https.request(_this.config.auth_options, function(res) {
-      res.on('data', function(d) {
-        var cred_obj = JSON.parse(d);
+      var content = '';
+
+      res.setEncoding('utf8');
+      res.on('data', function(chunk) {
+        content += chunk.toString();
+      }).on('end', function() {
+        var cred_obj;
+
+        try {
+          cred_obj = JSON.parse(content);
+          if ((!cred_obj.access_token) || (!cred_obj.refresh_token)) {
+            return callback(new Error('getToken failed'));
+          }
+        } catch(ex) { return callback(ex); }
+
         _this.config.credentials.access_token = cred_obj.access_token;
         _this.config.credentials.expires_in = cred_obj.expires_in;
+        if (_this.config.credentials.expires_in < 120) _this.config.credentials.expires_in = 180;
         _this.config.credentials.expire_in = cred_obj.expire_in;
         _this.config.credentials.scope = cred_obj.scope;
         _this.config.credentials.refresh_token = cred_obj.refresh_token;
-        _this.config.nextTokenRefresh = _this.tokenUpdated + _this.config.credentials.expires_in;
+        _this.config.tokenCheckInterval = (_this.config.credentials.expires_in - 120) * 1000;
+        _this.logger.info("Successfully retrieved token, next check in " + (_this.config.tokenCheckInterval/1000) + ' secs');
 
-        _this.logger.info("Successfully retrieved token...");
-
-        _this.refreshTokenTimer = setInterval(function () { _this.refreshTokenCheck(_this); }, _this.config.tokenCheckInterval);
+        setTimeout(function () { _this.refreshToken(_this); }, _this.config.tokenCheckInterval);
         callback(null);
       });
     }).on('error', function(err) {
@@ -145,18 +158,7 @@ Netatmo.prototype.getToken = function(callback) {
     return _this;
 };
 
-Netatmo.prototype.refreshTokenCheck = function(_this) {
-    _this.logger.info("Checking to see if the access token needs to be refreshed...");
-
-    var now = new Date();
-
-    // Note: adding 2 minutes to the expires_in cutoff so we can prevent loop() from being called when the token has expired
-    // There's probably a better way to do this.
-    if(_this.config.nextTokenRefresh <= (_this.tokenUpdated + _this.config.credentials.expires_in + 120000)) return;
-
-    _this.tokenUpdated = now; // update tokenUpdated to now so we can check all over again
-    _this.refreshToken();
-
+Netatmo.prototype.refreshToken = function(_this) {
     _this.logger.info("Refreshing authorization token...");
 
     // Set the refresh token based on current credentials
@@ -167,27 +169,37 @@ Netatmo.prototype.refreshTokenCheck = function(_this) {
     //SET THE HEADERS!!!
     _this.config.auth_options.headers = {"Content-Type": "application/x-www-form-urlencoded;charset=UTF-8", "Content-Length": auth_data.length};
 
-    var req = https.request(_this.config.auth_options, function(res) {
-        res.on('data', function(d) {
-            var cred_obj = JSON.parse(d);
-            _this.config.credentials.access_token = cred_obj.access_token;
-            _this.config.credentials.expires_in = cred_obj.expires_in * 1000; // convert to millis
-            _this.config.credentials.expire_in = cred_obj.expire_in * 1000; // convert to millis
-            _this.config.credentials.scope = cred_obj.scope;
-            _this.config.credentials.refresh_token = cred_obj.refresh_token;
+    _this.tokenUpdated = new Date().getTime();
+    https.request(_this.config.auth_options, function(res) {
+      var content = '';
 
-            _this.config.nextTokenRefresh = _this.tokenUpdated + _this.config.credentials.expires_in;
+      res.setEncoding('utf8');
+      res.on('data', function(chunk) {
+        content += chunk.toString();
+      }).on('end', function() {
+        var cred_obj;
 
-            _this.logger.info("Successfully refreshed access token...");
-        });
-    });
+        try {
+          cred_obj = JSON.parse(content);
+          if ((!cred_obj.access_token) || (!cred_obj.refresh_token)) {
+            return _this.emit('error', new Error('refreshToken failed'));
+          }
+        } catch(ex) { return _this.emit('error', ex); }
 
-    req.write(auth_data);
-    req.end();
+        _this.config.credentials.access_token = cred_obj.access_token;
+        _this.config.credentials.expires_in = cred_obj.expires_in;
+        if (_this.config.credentials.expires_in < 120) _this.config.credentials.expires_in = 180;
+        _this.config.credentials.expire_in = cred_obj.expire_in;
+        _this.config.credentials.scope = cred_obj.scope;
+        _this.config.credentials.refresh_token = cred_obj.refresh_token;
+        _this.config.tokenCheckInterval = (_this.config.credentials.expires_in - 120) * 1000;
+        _this.logger.info("Successfully refreshed access token, next check in " + (_this.config.tokenCheckInterval/1000) + ' secs');
 
-    req.on('error', function(err) {
+        setTimeout(function () { _this.refreshToken(_this); }, _this.config.tokenCheckInterval);
+      });
+    }).on('error', function(err) {
       _this.emit('error', err);
-    });
+    }).end(auth_data);
 };
 
 Netatmo.prototype.invoke = function(path, callback) {
@@ -196,7 +208,7 @@ Netatmo.prototype.invoke = function(path, callback) {
   if (!callback) {
     callback = function(err, msg) {
       if (err) _this.logger.error('netatmo error', { exception: err }); else _this.logger.info(msg);
-    }
+    };
   }
 
   _this.config.api_options.path = path;
@@ -214,11 +226,23 @@ Netatmo.prototype.invoke = function(path, callback) {
         results = JSON.parse(content);
         if ((!_this.devices) && (!!results.body) && (util.isArray(results.body.devices))) _this.devices = results.body.devices;
 
+if(results.status!== 'ok'){
+console.log((new Date().getTime()) / 1000);
+console.log(JSON.stringify(_this.tokenUpdated));
+console.log(JSON.stringify(_this.config.nextTokenRefresh));
+console.log(JSON.stringify(_this.config.tokenCheckInterval));
+console.log(JSON.stringify(_this.config.credentials));
+}
         callback(null, results);
       } catch(ex) { callback(ex); }
     });
   }).on('error', function(err) {
     callback(err);
+console.log((new Date().getTime()) / 1000);
+console.log(JSON.stringify(_this.tokenUpdated));
+console.log(JSON.stringify(_this.config.nextTokenRefresh));
+console.log(JSON.stringify(_this.config.tokenCheckInterval));
+console.log(JSON.stringify(_this.config.credentials));
   }).end();
 };
 
