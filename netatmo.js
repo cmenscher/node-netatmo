@@ -66,11 +66,11 @@ var DEFAULT_CONFIG = {
     tokenCheckInterval: 60 * 1000
 };
 
-var DEFAULT_LOGGER = { error   : function(msg, props) { console.log(msg); console.trace(props.exception); }
-                     , warning : function(msg, props) { console.log(msg); if (props) console.log(props);  }
-                     , notice  : function(msg, props) { console.log(msg); if (props) console.log(props);  }
-                     , info    : function(msg, props) { console.log(msg); if (props) console.log(props);  }
-                     , debug   : function(msg, props) { console.log(msg); if (props) console.log(props);  }
+var DEFAULT_LOGGER = { error   : function(msg, props) { console.log(msg); if (!!props) console.trace(props.exception); }
+                     , warning : function(msg, props) { console.log(msg); if (!!props) console.log(props);             }
+                     , notice  : function(msg, props) { console.log(msg); if (!!props) console.log(props);             }
+                     , info    : function(msg, props) { console.log(msg); if (!!props) console.log(props);             }
+                     , debug   : function(msg, props) { console.log(msg); if (!!props) console.log(props);             }
                      };
 
 var Netatmo = function(info) {
@@ -226,23 +226,11 @@ Netatmo.prototype.invoke = function(path, callback) {
         results = JSON.parse(content);
         if ((!_this.devices) && (!!results.body) && (util.isArray(results.body.devices))) _this.devices = results.body.devices;
 
-if(results.status!== 'ok'){
-console.log((new Date().getTime()) / 1000);
-console.log(JSON.stringify(_this.tokenUpdated));
-console.log(JSON.stringify(_this.config.nextTokenRefresh));
-console.log(JSON.stringify(_this.config.tokenCheckInterval));
-console.log(JSON.stringify(_this.config.credentials));
-}
         callback(null, results);
       } catch(ex) { callback(ex); }
     });
   }).on('error', function(err) {
     callback(err);
-console.log((new Date().getTime()) / 1000);
-console.log(JSON.stringify(_this.tokenUpdated));
-console.log(JSON.stringify(_this.config.nextTokenRefresh));
-console.log(JSON.stringify(_this.config.tokenCheckInterval));
-console.log(JSON.stringify(_this.config.credentials));
   }).end();
 };
 
