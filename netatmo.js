@@ -114,7 +114,7 @@ Netatmo.prototype.getToken = function(callback) {
     _this.logger.info("Getting authorization token...");
 
     if(arguments.length === 0) {
-        callback = function(err) { _this.logger.error('getToken error', { excepton: err }); };
+        callback = function(err) { _this.logger.error('getToken', { exception: err }); };
     }
 
     var auth_data = querystring.stringify(_this.config.auth_request);
@@ -207,7 +207,7 @@ Netatmo.prototype.invoke = function(path, callback) {
 
   if (!callback) {
     callback = function(err, msg) {
-      if (err) _this.logger.error('netatmo error', { exception: err }); else _this.logger.info(msg);
+      if (err) _this.logger.error('invoke', { exception: err }); else _this.logger.info(msg);
     };
   }
 
