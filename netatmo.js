@@ -74,10 +74,25 @@ var DEFAULT_LOGGER = { error   : function(msg, props) { console.log(msg); if (!!
                      };
 
 var Netatmo = function(info) {
+    var op, param;
+
     this.devices = null;
     this.currentValue = 0; // holds the last value of whatever we decide to examine (i.e. Temp, Pressure, Humidity, Sound...)
     this.lastValue = 0; // holds the last value of whatever we decide to examine (i.e. Temp, Pressure, Humidity, Sound...)
-    this.config = DEFAULT_CONFIG;
+    this.config = {};
+    for (op in DEFAULT_CONFIG) {
+      if (!DEFAULT_CONFIG.hasOwnProperty(op)) continue;
+
+      if ((typeof DEFAULT_CONFIG[op]) !== 'object') {
+        this.config[op] = DEFAULT_CONFIG[op];
+        continue;
+      }
+
+      this.config[op] = {};
+      for (param in DEFAULT_CONFIG[op]) {
+        if (DEFAULT_CONFIG[op].hasOwnProperty(param)) this.config[op][param] =  DEFAULT_CONFIG[op][param];
+      }
+    }
     this.logger = DEFAULT_LOGGER;
 
     if (!!info) this.initialize(info);
