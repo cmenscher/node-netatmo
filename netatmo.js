@@ -32,7 +32,8 @@ var DEFAULT_CONFIG = {
         client_id: '$CLIENT_ID',
         client_secret: '$CLIENT_SECRET',
         username: '$USERNAME',
-        password: '$PASSWORD'
+        password: '$PASSWORD',
+        scope: 'read_station'
     },
 
     auth_refresh: {
@@ -258,7 +259,7 @@ Netatmo.prototype.getDevices = function(callback) {
 };
 
 Netatmo.prototype.getMeasurement = function(params, callback) {
-  var path = "/api/devicelist?access_token="  + this.config.credentials.access_token;
+  var path;
 
   params = params || {};
   if (typeof params === 'function') {
