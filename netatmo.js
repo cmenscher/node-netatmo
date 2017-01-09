@@ -32,7 +32,8 @@ var DEFAULT_CONFIG = {
         client_id: '$CLIENT_ID',
         client_secret: '$CLIENT_SECRET',
         username: '$USERNAME',
-        password: '$PASSWORD'
+        password: '$PASSWORD',
+        scope: 'read_station'
     },
 
     auth_refresh: {
@@ -66,18 +67,33 @@ var DEFAULT_CONFIG = {
     tokenCheckInterval: 60 * 1000
 };
 
-var DEFAULT_LOGGER = { error   : function(msg, props) { console.log(msg); console.trace(props.exception); }
-                     , warning : function(msg, props) { console.log(msg); if (props) console.log(props);  }
-                     , notice  : function(msg, props) { console.log(msg); if (props) console.log(props);  }
-                     , info    : function(msg, props) { console.log(msg); if (props) console.log(props);  }
-                     , debug   : function(msg, props) { console.log(msg); if (props) console.log(props);  }
+var DEFAULT_LOGGER = { error   : function(msg, props) { console.log(msg); if (!!props) console.trace(props.exception); }
+                     , warning : function(msg, props) { console.log(msg); if (!!props) console.log(props);             }
+                     , notice  : function(msg, props) { console.log(msg); if (!!props) console.log(props);             }
+                     , info    : function(msg, props) { console.log(msg); if (!!props) console.log(props);             }
+                     , debug   : function(msg, props) { console.log(msg); if (!!props) console.log(props);             }
                      };
 
 var Netatmo = function(info) {
+    var op, param;
+
     this.devices = null;
     this.currentValue = 0; // holds the last value of whatever we decide to examine (i.e. Temp, Pressure, Humidity, Sound...)
     this.lastValue = 0; // holds the last value of whatever we decide to examine (i.e. Temp, Pressure, Humidity, Sound...)
-    this.config = DEFAULT_CONFIG;
+    this.config = {};
+    for (op in DEFAULT_CONFIG) {
+      if (!DEFAULT_CONFIG.hasOwnProperty(op)) continue;
+
+      if ((typeof DEFAULT_CONFIG[op]) !== 'object') {
+        this.config[op] = DEFAULT_CONFIG[op];
+        continue;
+      }
+
+      this.config[op] = {};
+      for (param in DEFAULT_CONFIG[op]) {
+        if (DEFAULT_CONFIG[op].hasOwnProperty(param)) this.config[op][param] =  DEFAULT_CONFIG[op][param];
+      }
+    }
     this.logger = DEFAULT_LOGGER;
 
     if (!!info) this.initialize(info);
@@ -114,7 +130,7 @@ Netatmo.prototype.getToken = function(callback) {
     _this.logger.info("Getting authorization token...");
 
     if(arguments.length === 0) {
-        callback = function(err) { _this.logger.error('getToken error', { excepton: err }); };
+        callback = function(err) { _this.logger.error('getToken', { exception: err }); };
     }
 
     var auth_data = querystring.stringify(_this.config.auth_request);
@@ -207,7 +223,7 @@ Netatmo.prototype.invoke = function(path, callback) {
 
   if (!callback) {
     callback = function(err, msg) {
-      if (err) _this.logger.error('netatmo error', { exception: err }); else _this.logger.info(msg);
+      if (err) _this.logger.error('invoke', { exception: err }); else _this.logger.info(msg);
     };
   }
 
@@ -226,23 +242,11 @@ Netatmo.prototype.invoke = function(path, callback) {
         results = JSON.parse(content);
         if ((!_this.devices) && (!!results.body) && (util.isArray(results.body.devices))) _this.devices = results.body.devices;
 
-if(results.status!== 'ok'){
-console.log((new Date().getTime()) / 1000);
-console.log(JSON.stringify(_this.tokenUpdated));
-console.log(JSON.stringify(_this.config.nextTokenRefresh));
-console.log(JSON.stringify(_this.config.tokenCheckInterval));
-console.log(JSON.stringify(_this.config.credentials));
-}
         callback(null, results);
       } catch(ex) { callback(ex); }
     });
   }).on('error', function(err) {
     callback(err);
-console.log((new Date().getTime()) / 1000);
-console.log(JSON.stringify(_this.tokenUpdated));
-console.log(JSON.stringify(_this.config.nextTokenRefresh));
-console.log(JSON.stringify(_this.config.tokenCheckInterval));
-console.log(JSON.stringify(_this.config.credentials));
   }).end();
 };
 
@@ -255,7 +259,7 @@ Netatmo.prototype.getDevices = function(callback) {
 };
 
 Netatmo.prototype.getMeasurement = function(params, callback) {
-  var path = "/api/devicelist?access_token="  + this.config.credentials.access_token;
+  var path;
 
   params = params || {};
   if (typeof params === 'function') {
